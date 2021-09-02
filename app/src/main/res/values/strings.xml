@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Zibo</string>
+    <string name="start">Start</string>
+    <string name="release">Release</string>
+    <string name="loading">Loading...</string>
+    <string name="localhost_3000_api">localhost:3000/api</string>
+    <string name="cms_address">CMS Address</string>
+    <string name="ip_address">http://192.168.1.10:3000/</string>
+    <string name="rrrrrrrrrr">},</string>
+</resources>
