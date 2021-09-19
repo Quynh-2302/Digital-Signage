@@ -9,6 +9,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Environment;
 import android.util.Log;
 import android.view.View;
@@ -34,12 +35,27 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         initInterface();
         setContentView(R.layout.activity_main);
+
+
         videoView = findViewById(R.id.playerView);
         mediaController = new MediaController(this);
 
         Gson gson = new Gson();
 
         Intent intent = getIntent();
+        if(intent.getStringExtra("todt") != null) {
+            int timer = Integer.parseInt(intent.getStringExtra("todt"));
+            new CountDownTimer(timer, 1000) {
+                public void onTick(long millisUntilFinished) {
+
+                }
+
+                public void onFinish() {
+                    finish(); // finish Activity Main
+                }
+            }.start();
+        }
+
 
         Schedule schedule = gson.fromJson(intent.getStringExtra("scheduleJson"), Schedule.class);
         String path = getFilePath(intent.getStringExtra("fileName"));

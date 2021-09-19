@@ -52,13 +52,12 @@ public class SettingActivity extends AppCompatActivity {
     String TAG = "SETTING_ACTIVITY";
     String HARDWARE_CODE;
     Button btn_start;
-    TextInputEditText txt_cms_address;
+    TextInputEditText txt_cms_address, txt_display_name;
     ProgressDialog progressDialog;
-
-    private boolean checkConnect = false;
 
     private String fileName;
     private String cmsAddress;
+    private String displayName;
     private Display display;
     private FileWrapper fWrapper;
     private ScheduleWrapper sWrapper;
@@ -77,23 +76,15 @@ public class SettingActivity extends AppCompatActivity {
 
         progressDialog = new ProgressDialog(SettingActivity.this);
         btn_start.setOnClickListener(view -> {
-            if (txt_cms_address.getText() != null) {
+            if (txt_cms_address.getText() != null && txt_display_name.getText() != null) {
                 cmsAddress = txt_cms_address.getText().toString();
+                displayName = txt_display_name.getText().toString();
                 Log.d(TAG, "CMS" + cmsAddress);
+                //start
                 APIRegisterDisplay();
-                APISchedule();
-                APIGetRequiredFile();
-                if (checkConnect) {
-//                    APIGetRequiredFile();
-//                    APISchedule();
-                    Log.d(TAG, "check ok");
-                } else {
-                    Log.d(TAG, "check deo ok");
-                }
             } else {
                 Toast.makeText(this, "Address must not be empty!!", Toast.LENGTH_SHORT).show();
             }
-            //new DownloadAsyncTask().execute(url);
         });
         progressDialog.setOnCancelListener(DialogInterface::dismiss);
     }
@@ -102,7 +93,7 @@ public class SettingActivity extends AppCompatActivity {
         HARDWARE_CODE = Constant.getHardwareCode(getApplicationContext());
         btn_start = findViewById(R.id.btn_start);
         txt_cms_address = findViewById(R.id.txt_address);
-
+        txt_display_name = findViewById(R.id.txt_display_name);
     }
 
     /*API Service*/
@@ -110,7 +101,7 @@ public class SettingActivity extends AppCompatActivity {
 
         RegisterDisplay registerDisplay = new RegisterDisplay();
         registerDisplay.setHardwareKey(Constant.getHardwareCode(getApplicationContext()));
-        registerDisplay.setDisplayName("hadestrb");
+        registerDisplay.setDisplayName(displayName);
         registerDisplay.setClientCode("2");
         registerDisplay.setClientType(Constant.CLIENT_TYPE);
         registerDisplay.setMacAddress(Constant.MAC_ADDRESS);
@@ -134,15 +125,15 @@ public class SettingActivity extends AppCompatActivity {
                     Log.d(TAG, "display:" + string);
                     display = gson.fromJson(string, Display.class);
                     Log.d(TAG, display.toString());
-
+                    Toast.makeText(getApplicationContext(), display.getMessage(), Toast.LENGTH_SHORT).show();
                     if (display != null) {
-                        if (display.getCode().equals("0")) {
-                            //code == 0 Display is active and ready to start
-                            Toast.makeText(getApplicationContext(), display.getMessage(), Toast.LENGTH_SHORT).show();
-                            Log.d(TAG, "get display successful");
+                        if (display.getCode().equals("READY")) {
+                            //code == READY Display is active and ready to start
 
-                            checkConnect = true;
+                            Log.d(TAG, " REGISTER_DISPLAY: get display successful, code:" + display.getCode());
 
+                            APISchedule();
+                            APIGetRequiredFile();
                         } else {
                             Toast.makeText(getApplicationContext(), display.getMessage(), Toast.LENGTH_SHORT).show();
                         }
@@ -156,13 +147,14 @@ public class SettingActivity extends AppCompatActivity {
             @Override
             public void onFailure(@NonNull Call<JsonObject> call, @NonNull Throwable t) {
                 Log.e(TAG, "REGISTER_DISPLAY:" + t.getLocalizedMessage());
+                Toast.makeText(getApplicationContext(), "Unable to connect to CMS!!!", Toast.LENGTH_SHORT).show();
             }
         });
 
     }
 
     public void APIGetRequiredFile() {
-        Log.d(TAG, "required file: " + cmsAddress);
+        Log.d(TAG, "API REQUIRED FILE: " + cmsAddress);
         apiService = RetrofitClient.getClient(cmsAddress).create(APIService.class);
         apiService.getRequireFile(new HardwareKey(HARDWARE_CODE)).enqueue(new Callback<JsonObject>() {
             @Override
@@ -198,7 +190,7 @@ public class SettingActivity extends AppCompatActivity {
     }
 
     private void APISchedule() {
-
+        Log.d(TAG, "API SCHEDULE: " + cmsAddress);
         apiService = RetrofitClient.getClient(cmsAddress).create(APIService.class);
         apiService.getSchedule(new HardwareKey(HARDWARE_CODE)).enqueue(new Callback<JsonObject>() {
             @Override
@@ -220,12 +212,13 @@ public class SettingActivity extends AppCompatActivity {
                     ScheduleItem item;
 
                     Log.d(TAG, "Default:" + sWrapper.getsDefault().toString());
-                    Log.d(TAG, "Layout:" + sWrapper.getsLayout().toString());
+
                     if (sWrapper != null) {
                         if (sWrapper.getsLayout() == null) {
                             layout = sWrapper.getsDefault();
                             strSchedule = "default";
                         } else {
+                            Log.d(TAG, "Layout:" + sWrapper.getsLayout().toString());
                             layout = sWrapper.getsLayout();
                             strSchedule = "layout";
                         }
@@ -261,7 +254,7 @@ public class SettingActivity extends AppCompatActivity {
     private void getVideoPlayer(String URL, String fileName) {
         String ending = getFileName(URL);
         String URLVideo = getVideoURL(cmsAddress) + ending;
-        new DownloadAsyncTask().execute(URLVideo, file_name);
+        new DownloadAsyncTask().execute(URLVideo, fileName);
     }
 
     private String getVideoURL(String cmsAddress) {
